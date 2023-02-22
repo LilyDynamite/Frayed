@@ -1,0 +1,36 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class AttackHit : MonoBehaviour
+{
+
+    // Start is called before the first frame update
+    void Start()
+    {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+
+    private void OnColliderEnter2D(Collider2D other)
+    {
+        //make it check if the thing it's colliding with is another projectile or the player.
+        //if so, don't destroy it
+
+        //destroy itself on collision
+        if (other.gameObject.name == "Player" || other.gameObject.tag == "Attack")
+        {
+            //do nothing, we don't want to be destroyed if we touch these
+        }
+        else
+        {
+
+            Destroy(gameObject);
+        }
+    }
+}
