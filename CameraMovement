@@ -1,0 +1,33 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CameraMovement : MonoBehaviour
+{
+    public float zOffset = -12;
+    public float yOffset = 3;
+    public float xOffset = 0;
+    private GameObject toFollow;
+    private Vector3 newPos;
+    public bool canFollow = true;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        //set the game object to follow (player by default)
+        toFollow = GameObject.Find("Player");
+
+        GetComponent<Camera>().transparencySortMode = TransparencySortMode.Orthographic;
+    }
+
+    // Update is called once per frame
+    void LateUpdate()
+    {
+        //move to the new position every frame
+        if(canFollow)
+        {
+            newPos = new Vector3(toFollow.transform.position.x + xOffset, toFollow.transform.position.y + yOffset, toFollow.transform.position.z + zOffset);
+            transform.position = newPos;
+        }
+    }
+}
