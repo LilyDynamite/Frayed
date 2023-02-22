@@ -1,0 +1,40 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class AttackMovement : MonoBehaviour
+{
+    private Vector3 movement = new Vector3(1, 0, 0);
+    private float speed = 10f;
+
+    private float duration = 0.15f;
+    private float timeRemaining = 0;
+
+    private GameObject player;
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        player = GameObject.Find("Player");
+        timeRemaining = duration;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        //timer to control duration of attack
+        if (timeRemaining <= 0)
+        {
+            player.GetComponent<PlayerController>().isAttacking = false;
+            Destroy(gameObject);
+        }
+        else
+        {
+            timeRemaining -= Time.deltaTime;
+        }
+
+        //move downwards
+        transform.Translate(movement * speed * Time.deltaTime);
+    }
+}
