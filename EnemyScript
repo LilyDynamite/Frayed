@@ -1,0 +1,70 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Animations;
+
+public class EnemyScript : MonoBehaviour
+{
+    private int health = 1;
+
+    public int setHealth = 1;
+
+    private GameObject player;
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        player = GameObject.Find("Player");
+        SetHealth(setHealth);
+
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        
+    }
+
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        //if the enemy is colliding with an attack, take damage 
+        if(other.gameObject.tag == "Attack")
+        {
+            player.GetComponent<PlayerController>().PlayHitEnemy();
+            health -= 1;
+
+            if(health <= 0)
+            {
+                //enemy died
+                
+                //if the enemy is the one that needs to be killed to open the building door
+                if (gameObject.name == "Building Enemy")
+                {
+                    //open the door
+
+                    if(GameObject.Find("Building Door") != null)
+                    {
+                        GameObject.Find("Building Door").SetActive(false);
+                    }
+
+                }
+
+                Destroy(gameObject);
+            }
+
+        }
+    }
+
+    public void SetHealth(int newHealth)
+    {
+        health = newHealth;
+    }
+
+    public int GetHealth()
+    {
+        return health;
+    }
+}
