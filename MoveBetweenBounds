@@ -1,0 +1,62 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class MoveBetweenBounds : MonoBehaviour
+{
+    //boundary variables
+    public float leftBound;
+    public float rightBound;
+
+    //movement variables
+    public float direction = 1;
+    public float speed = 5.0f;
+    private Vector3 yFlip = new Vector3(0, 180, 0);
+
+    //varibales for timer to allow enemy to freeze after hitting player
+    public float timeToFreeze = 1;
+    private float timeRemaining;
+
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        //keep the enemy moving within its bounds
+
+
+        if (transform.position.x >= rightBound)
+        {
+            //flip
+            transform.Rotate(yFlip);
+        }
+        if (transform.position.x <= leftBound)
+        {
+            //flip
+            transform.Rotate(yFlip);
+        }
+
+        //timer for freezing after hitting player
+        if (timeRemaining <= 0)
+        {
+            GetComponent<Animator>().speed = 1;
+            transform.Translate(Vector3.right * direction * speed * Time.deltaTime);
+        }
+        else
+        {
+            GetComponent<Animator>().speed = 0;
+            timeRemaining -= Time.deltaTime;
+        }
+    }
+
+    public void freeze()
+    {
+        timeRemaining = timeToFreeze;
+    }
+}
