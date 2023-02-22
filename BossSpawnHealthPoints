@@ -1,0 +1,77 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class BossSpawnHealthPoints : MonoBehaviour
+{
+    //health point prefab
+    public GameObject healthPoint;
+
+    //health point spawning variables
+    private Vector3 spawnPoint1 = new Vector3(240, 96, 0);
+    private Vector3 spawnPoint2 = new Vector3(260, 96, 0);
+    private Vector3 spawnPoint3 = new Vector3(250, 92.5f, 0);
+    public bool health1 = false;
+    public bool health2 = false;
+    public bool health3 = false;
+    public GameObject temp1;
+    public GameObject temp2;
+    public GameObject temp3;
+
+    //player controller for access to player's health
+    private PlayerController playerCont;
+    
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        playerCont = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        //spawn health points at certain health levels if there isnt one there already
+        if(playerCont.curHealth == 3 && health1 == false)
+        {
+            GameObject temp1 = Instantiate(healthPoint, spawnPoint1, transform.rotation);
+            temp1.GetComponent<HealthPoint>().bossNum = 1;
+            health1 = true;
+        }
+        else if(playerCont.curHealth == 2 && health2 == false)
+        {
+            GameObject temp2 = Instantiate(healthPoint, spawnPoint2, transform.rotation);
+            temp2.GetComponent<HealthPoint>().bossNum = 2;
+            health2 = true;
+        }
+        else if(playerCont.curHealth == 1 && health3 == false)
+        {
+            GameObject temp3 = Instantiate(healthPoint, spawnPoint3, transform.rotation);
+            temp3.GetComponent<HealthPoint>().bossNum = 3;
+            health3 = true;
+        }
+        
+    }
+
+    //allow the health points to be destroyed in both scripts
+    public void SetDestroyed(int piece)
+    {
+        if(piece == 1)
+        {
+            health1 = false;
+            Destroy(temp1);
+        }
+        else if(piece == 2)
+        {
+            health2 = false;
+            Destroy(temp2);
+
+        }
+        else if (piece == 3)
+        {
+            health3 = false;
+            Destroy(temp3);
+
+        }
+    }
+}
