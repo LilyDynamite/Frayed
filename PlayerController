@@ -1,0 +1,421 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+
+public class PlayerController : MonoBehaviour
+{
+
+    //private movement variables
+    private float horizontalInput;
+    public float speed = 10;
+    private float facing;
+    private Vector3 yFlip = new Vector3(0, 180, 0);
+    private Rigidbody2D rb2D;
+    public float jumpForce = 10;
+
+    //attack variables
+    public GameObject attackPrefab;
+    private Vector3 attackOffset = new Vector3(1.0f, -0.5f, 0);
+    public bool isAttacking = false;
+
+    //health variables
+    public int curHealth = 0;
+    public int maxHealth = 5;
+    public HealthBar healthBar;
+    public GameObject healthCanvas;
+
+    //player respawn variables
+    public float spawnX = -40;
+    public float spawnY = 40;
+
+    //animation variables
+    private Animator anim;
+    private AnimatorClipInfo[] currentClipInfo;
+    private string clipName;
+
+    //door variables
+    private bool hasKey = false;
+    public TextMeshProUGUI doorText;
+    public GameObject doorTextBox;
+
+    //player boss fight variables
+    public bool inGuardFight = false;
+    public bool inFrayFight = false;
+    public bool beatFray = false;
+    public GameObject fray;
+    public GameObject guard;
+    public GameObject dialogue;
+    public GameObject healthSpawner;
+    public TextMeshProUGUI frayText;
+    public GameObject frayTextBox;
+    private Vector3 guardSpawn = new Vector3(256, 92.2f, 0);
+
+    //credits variables
+    private GameObject credits;
+
+    //sound effects variables
+    private AudioSource audios;
+    public AudioClip healthSound;
+    public AudioClip jumpSound;
+    public AudioClip hurtSound;
+    public AudioClip landingSound;
+    private bool onGround = false;
+    public AudioClip attackSound;
+    public AudioClip deathSound;
+    public AudioClip hitEnemySound;
+    public AudioClip bounceSound;
+    public AudioClip hitArmourSound;
+
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        //get components and objects
+        rb2D = GetComponent<Rigidbody2D>();
+        dialogue = GameObject.Find("Fray Text");
+        frayText = dialogue.GetComponent<TextMeshProUGUI>();
+        frayTextBox = GameObject.Find("Fray Text Box");
+        healthSpawner = GameObject.FindGameObjectWithTag("Spawn Manager");
+        credits = GameObject.FindGameObjectWithTag("Credits");
+        healthCanvas = GameObject.FindGameObjectWithTag("Health Canvas");
+        doorText = GameObject.Find("Door Text").GetComponent<TextMeshProUGUI>();
+        doorTextBox = GameObject.Find("Door Text Box");
+        anim = GetComponent<Animator>();
+        audios = GetComponent<AudioSource>();
+
+
+        //initialize variables
+        facing = 1;
+        transform.rotation = Quaternion.Euler(0, 0, 0);
+        curHealth = maxHealth;
+
+        //deactivate credits
+        credits.SetActive(false);
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        //character movement
+
+        //orient the character in the correct direction
+        horizontalInput = Input.GetAxis("Horizontal");
+        if (horizontalInput > 0)
+        {
+            if (facing != 1)
+            {
+                facing = 1;
+                transform.Rotate(yFlip);
+            }
+        }
+        else if (horizontalInput < 0)
+        {
+            if (facing != -1)
+            {
+                facing = -1;
+                transform.Rotate(yFlip);
+            }
+        }
+        //go forward according to local rotation
+        transform.Translate(Vector3.right * Time.deltaTime * Mathf.Abs(horizontalInput) * speed);
+
+        //don't play walking animation when standing still
+        currentClipInfo = anim.GetCurrentAnimatorClipInfo(0);
+
+        //make sure the clip is not out of bounds
+        if (currentClipInfo.Length != 0)
+        {
+            clipName = currentClipInfo[0].clip.name;
+        }
+
+        if (clipName == "Player Walk Cycle")
+        {
+            //player is walking
+            anim.speed = Mathf.Abs(horizontalInput);
+        }
+        else
+        {
+            //another animation is playing
+            anim.speed = 1;
+        }
+
+        
+        
+
+        //jump if spacebar is pressed
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Jump();
+        }
+
+        //launch an attack 
+        if (Input.GetKeyDown(KeyCode.X) && !isAttacking)
+        {
+            anim.Play("Base Layer.Player Attack");
+
+            audios.PlayOneShot(attackSound);
+
+            isAttacking = true;
+            GameObject attack = Instantiate(attackPrefab, transform.position, transform.rotation);
+            attack.transform.Translate(attackOffset);
+        }
+
+        //check if the player has died
+        if (curHealth <= 0)
+        {
+
+            audios.PlayOneShot(deathSound);
+
+            //respawn
+            curHealth = maxHealth;
+            healthBar.SetHealth(curHealth);
+            transform.position = new Vector3(spawnX, spawnY, 0);
+
+            if (inGuardFight)
+            {
+                StartGuardFight();
+            }
+            else if(inFrayFight)
+            {
+                StartFrayFight();
+            }
+        }
+
+    }
+
+    //allow to the player to take damage from non-triggers like enemies
+    private void OnCollisionEnter2D(Collision2D other)
+    {
+        if (other.gameObject.tag == "Enemy")
+        {
+            //take damage
+            DamagePlayer(1);
+
+            //make the enemy freeze
+            if (other.gameObject.GetComponent<MoveBetweenBounds>() != null)
+            {
+                other.gameObject.GetComponent<MoveBetweenBounds>().freeze();
+            }
+
+        }
+        //allow the player to open the door
+        else if (other.gameObject.name == "Key Door" && hasKey)
+        {
+            Destroy(other.gameObject);
+            doorTextBox.SetActive(false);
+            doorText.text = "";
+        }
+        else if (other.gameObject.tag == "Bounce")
+        {
+            audios.PlayOneShot(bounceSound);
+        }
+       
+
+        //play a sound if the player is landing
+        if (!onGround)
+        {
+            audios.PlayOneShot(landingSound);
+        }
+
+    }
+
+    //allow to the player to take damage from triggers like acid
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        if (other.gameObject.name == "Acid")
+        {
+            //take damage
+            DamagePlayer(1);
+        }
+    }
+
+    //allow the player to interact with triggers
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        //allow the player to pick up the key
+        if(other.name == "Key")
+        {
+            Destroy(other.gameObject);
+            hasKey = true;
+
+            doorText.text = "Well done, you found the key. Touch the door with it so we can keep moving.";
+        }
+        else if(other.gameObject.tag == "Health")
+        {
+            audios.PlayOneShot(healthSound);
+        }
+    }
+
+    //allow the player to jump
+    private void Jump()
+    {
+        if (rb2D.velocity.y < 0.4 && rb2D.velocity.y > -0.4)
+        {
+            anim.Play("Base Layer.Player Jump");
+
+            audios.PlayOneShot(jumpSound);
+
+            onGround = false;
+            rb2D.AddForce(transform.up * jumpForce, ForceMode2D.Impulse);
+        }
+    }
+
+    //allow the player to jump
+    public void ExitGame()
+    {
+        Debug.Log("quit game");
+        Application.Quit();
+    }
+
+
+    public void SetHealth(int newHealth)
+    {
+        curHealth = newHealth;
+    }
+
+    //method to cause the player to take damage
+    public void DamagePlayer(int damage)
+    {
+        audios.PlayOneShot(hurtSound);
+        curHealth -= damage;
+        healthBar.SetHealth(curHealth);
+    }
+
+    public void PlayHitEnemy()
+    {
+        audios.PlayOneShot(hitEnemySound);
+    }
+
+    public void StartGuardFight()
+    {
+        frayText.text = "";
+
+        //activate spawner
+        healthSpawner.SetActive(true);
+
+        //get enemies
+        fray = GameObject.FindGameObjectWithTag("Fray");
+        guard = GameObject.FindGameObjectWithTag("Guard");
+
+        //reset the guard enemy
+        guard.transform.position = guardSpawn;
+        guard.GetComponent<GuardScript>().ResetStats();
+
+        //reset fray's position
+        fray.transform.position = new Vector3(250, 108, 0);
+
+        //play through the guard cutscene
+        frayTextBox.SetActive(false);
+        StartCoroutine(DisplayFirstFrayText(1));
+
+        StartCoroutine(WaitThenClearFrayText(5));
+
+    }
+
+    //Guard cutscene: display the first line said by fray
+    IEnumerator DisplayFirstFrayText(int timeToWait)
+    {
+        yield return new WaitForSeconds(timeToWait);
+        frayTextBox.SetActive(true);
+        frayText.text = "Here it is! They hid the Artifact inside the Beacon! Let's kill the guard and finish our mission, attack his head!";
+    }
+
+    //Guard cutscene: clear fray's dialogue
+    IEnumerator WaitThenClearFrayText(int timeToWait)
+    {
+        yield return new WaitForSeconds(timeToWait);
+        frayText.text = "";
+        frayTextBox.SetActive(false);
+
+    }
+
+
+    public void StartFrayFight()
+    {
+        inGuardFight = false;
+        inFrayFight = true;
+        fray.GetComponent<FrayScript>().inFight = false;
+        fray.GetComponent<FrayScript>().ResetStats();
+
+        //play cutscene
+        StartCoroutine(FrayFightCutscene1(1));
+
+    }
+
+    IEnumerator FrayFightCutscene1(int timeToWait)
+    {
+        yield return new WaitForSeconds(timeToWait);
+        frayTextBox.SetActive(true);
+        frayText.text = "You killed him. I'll give you a moment to celebrate.";
+        StartCoroutine(FrayFightCutscene2(3));
+    }
+
+    IEnumerator FrayFightCutscene2(int timeToWait)
+    {
+        yield return new WaitForSeconds(timeToWait);
+        frayText.text = "Why aren't I so happy? Well you see, my mission is not yet complete.";
+        StartCoroutine(FrayFightCutscene3(5));
+        //play animation
+    }
+
+    IEnumerator FrayFightCutscene3(int timeToWait)
+    {
+        yield return new WaitForSeconds(timeToWait);
+        frayText.text = "Your mission was to bring the Artifact home. Mine... to take it from you.";
+        StartCoroutine(FrayFightCutscene4(4));
+
+    }
+
+    IEnumerator FrayFightCutscene4(int timeToWait)
+    {
+        yield return new WaitForSeconds(timeToWait);
+        frayText.text = "";
+        frayTextBox.SetActive(false);
+
+        fray.GetComponent<FrayScript>().inFight = true;
+    }
+
+    //called by FrayScript once she has been defeated (inFight set to false beforehand)
+    public void FrayDied()
+    {
+        beatFray = true;
+        inFrayFight = false;
+
+        StartCoroutine(FrayDefeated1(0));
+    }
+
+    IEnumerator FrayDefeated1(int timeToWait)
+    {
+        yield return new WaitForSeconds(timeToWait);
+        frayTextBox.SetActive(true);        
+        frayText.text = "Agh... You were much stronger than I thought.";
+        StartCoroutine(FrayDefeated2(3));
+        
+    }
+
+    IEnumerator FrayDefeated2(int timeToWait)
+    {
+        yield return new WaitForSeconds(timeToWait);
+        frayText.text = "The Artifact will belong to Elacsc someday... there will never be peace between us.";
+        StartCoroutine(Credits(5));
+    }
+
+    IEnumerator Credits(int timeToWait)
+    {
+        yield return new WaitForSeconds(timeToWait);
+
+        //hide other ui objects from view
+        frayTextBox.SetActive(false);
+        frayText.text = "";
+        healthCanvas.SetActive(false);
+
+        credits.SetActive(true);
+
+    }
+
+}
