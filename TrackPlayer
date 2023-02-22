@@ -1,0 +1,64 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class TrackPlayer : MonoBehaviour
+{
+    //tracking variables
+    public int trackMin;
+    public int trackMax;
+    private float playerX;
+
+    //movement variables
+    public float direction = 1;
+    public float speed = 5.0f;
+    private Vector3 yFlip = new Vector3(0, 180, 0);
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        playerX = GameObject.FindWithTag("Player").transform.position.x;
+
+        if (playerX > trackMin && playerX < trackMax)
+        {
+            GetComponent<Animator>().speed = 1;
+
+
+            //player is within range, move towards them
+            if (playerX <= transform.position.x)
+            {
+                //player is to the left of the enemy
+
+                if(direction == 1)
+                {
+                    transform.Rotate(yFlip);
+
+                }
+                direction = -1;
+                transform.Translate(Vector3.right * speed * Time.deltaTime);
+            }
+            else
+            {
+                //player is to the right
+                if (direction == -1)
+                {
+                    transform.Rotate(yFlip);
+
+                }
+                direction = 1;
+                transform.Translate(Vector3.right * speed * Time.deltaTime);
+            }
+
+        }
+        else
+        {
+            GetComponent<Animator>().speed = 0;
+        }
+    }
+}
