@@ -1,0 +1,130 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class GuardScript : MonoBehaviour
+{
+    //health
+    private int maxHealth = 15;
+    private int health;
+
+    //damage
+    private int damage = 1;
+
+    //movement variables
+    public float direction = 1;
+    private float speed;
+    private float phaseOneSpeed = 6;
+    private float phaseTwoSpeed = 8;
+    private Vector3 yFlip = new Vector3(0, 180, 0);
+    public bool canFlip = true;
+
+    //variables for timers
+    public float timeToFreeze = 1;
+    private float flipFreezeTime = 1;
+    private float timeRemaining = 0;
+    private float flipTimeRemaining = 0;
+
+    //its weak spot
+    private GameObject head;
+
+    //sound fx
+    public AudioClip hitArmour;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        speed = phaseOneSpeed;
+        health = maxHealth;
+        transform.eulerAngles = Vector3.zero;
+
+        head = GameObject.Find("Weak Spot");
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if(health == 10)
+        {
+            speed = phaseTwoSpeed;
+        }
+
+        //timer for freezing after hitting player
+        if (timeRemaining <= 0)
+        {
+            transform.Translate(Vector3.right * speed * Time.deltaTime);
+        }
+        else
+        {
+            timeRemaining -= Time.deltaTime;
+        }
+
+        //timer for flipping around
+        if (flipTimeRemaining <= 0)
+        {
+            canFlip = true;
+        }
+        else
+        {
+            flipTimeRemaining -= Time.deltaTime;
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if(other.tag == "Attack")
+        {
+            GetComponent<AudioSource>().PlayOneShot(hitArmour);
+        }
+    }
+
+
+    private void OnCollisionEnter2D(Collision2D other)
+    {
+
+        //switch directions when something is hit
+
+        if (other.gameObject.tag != "Floor")
+        {
+            if(canFlip)
+            {
+
+                if (direction == 1)
+                {
+                    transform.Rotate(yFlip);
+                    direction = -1;
+                    
+                }
+                else if (direction == -1)
+                {
+                    transform.Rotate(yFlip);
+                    direction = 1;
+                    
+                }
+
+                canFlip = false;
+                flipTimeRemaining = flipFreezeTime;
+            }
+            
+        }
+
+        if(other.gameObject.tag == "Player")
+        {
+            other.gameObject.GetComponent<PlayerController>().DamagePlayer(damage);
+        }
+    }
+
+    //Set speed and health back to their defaults
+    public void ResetStats()
+    {
+        health = maxHealth;
+        speed = phaseOneSpeed;
+        transform.eulerAngles = Vector3.zero;
+        direction = 1;
+
+        head.GetComponent<GuardWeakSpot>().ResetPhases();
+    }
+
+    //deal damage to the enemy
+    public void DoDamage(int damage)
+    {
