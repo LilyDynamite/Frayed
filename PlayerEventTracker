@@ -1,0 +1,114 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerEventTracker : MonoBehaviour
+{
+    //Game Objects in scene to track
+    private GameObject player;
+    private GameObject cam;
+    private CameraMovement camCont;
+    private PlayerController playerCont;
+
+    private float playerX;
+    private float playerY;
+
+    
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        //set the gameobjects
+        player = GameObject.FindGameObjectWithTag("Player");
+        cam = GameObject.FindGameObjectWithTag("MainCamera");
+        camCont = cam.GetComponent<CameraMovement>();
+        playerCont = player.GetComponent<PlayerController>();
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        //get the player's position
+        playerX = player.transform.position.x;
+        playerY = player.transform.position.y;
+
+        //check if the player has fallen into Beacon
+        if(playerY > -10 && playerY < 20)
+        {
+            playerCont.spawnX = 78;
+            playerCont.spawnY = -46;           
+        }
+
+
+        //check if player is in the building
+        if(playerX >= 152 && playerX <= 191)
+        {
+            camCont.yOffset = 0;
+            playerCont.spawnX = 155;
+            playerCont.spawnY = -50;
+        }
+        
+        //check if player is in the building extension
+        if(playerY < -49 && playerX > 191)
+        {
+            
+        }
+
+        //check if player has exited the building
+        if(playerX < 152 && playerX >= 110 && playerY < -60 && playerY > -77)
+        {
+            camCont.yOffset = 2;
+
+            playerCont.spawnX = 150;
+            playerCont.spawnY = -76;
+
+        }
+
+        //check if player is in downward stretch of underground
+        if(playerX > 86 && playerX < 119 && playerY < -57)
+        {
+            camCont.yOffset = -2;
+
+            playerCont.spawnX = 112;
+            playerCont.spawnY = -84;
+        }
+
+        //check if player is in upwards stretch of underground
+        if(playerX < 86 && playerX >= 53 && playerY < -50)
+        {
+            camCont.yOffset = 1;
+
+            playerCont.spawnX = 61.3f;
+            playerCont.spawnY = -142;
+
+        }
+
+        //check if player is in the beacon area
+        if(playerX < 53 && playerY < -33)
+        {
+            camCont.yOffset = 1.5f;
+
+            playerCont.spawnX = 40;
+            playerCont.spawnY = -73;
+        }
+
+        //check if player has gone into the Beacon
+        if(playerX > 16 && playerX < 23 && playerY < -95)
+        {
+
+            player.transform.position = new Vector3(250, 108, 0);
+            playerCont.inGuardFight = true;
+
+            playerCont.spawnX = 230;
+            playerCont.spawnY = 93;
+
+            camCont.canFollow = false;
+            cam.transform.position = new Vector3(250, 100, -15);
+
+            playerCont.StartGuardFight();
+
+
+        }
+    }
+}
