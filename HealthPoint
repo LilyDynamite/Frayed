@@ -1,0 +1,61 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class HealthPoint : MonoBehaviour
+{
+    public int value;
+    public int playerCurHealth;
+    public int playerMaxHealth;
+    private BossSpawnHealthPoints spawner;
+
+    public int bossNum = 0;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        playerMaxHealth = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>().maxHealth;
+    
+        spawner = GameObject.FindGameObjectWithTag("Spawn Manager").GetComponent<BossSpawnHealthPoints>();
+    
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.tag == "Player")
+        {
+            playerCurHealth = other.gameObject.GetComponent<PlayerController>().curHealth;
+
+            //add health if it isnt at max already
+            if (playerCurHealth == playerMaxHealth)
+            {
+                //Player is already at max health
+            }
+            else
+            {
+                other.gameObject.GetComponent<PlayerController>().SetHealth(playerCurHealth + value);
+                other.gameObject.GetComponent<PlayerController>().healthBar.SetHealth(playerCurHealth + value);
+                
+            }
+
+            //check if it was spawned by boss
+            if (bossNum == 1 || bossNum == 2 || bossNum == 3)
+            {
+                spawner.SetDestroyed(bossNum);
+                Destroy(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+
+            }
+        }
+
+    }
+}
