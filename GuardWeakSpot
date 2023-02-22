@@ -1,0 +1,71 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class GuardWeakSpot : MonoBehaviour
+{
+    public GameObject parent;
+    bool setNextPhase = false;
+    bool setFinalPhase = false;
+
+    public AudioClip hurtSound;
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        parent = GameObject.FindGameObjectWithTag("Guard");
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        //if the enemy is colliding with an attack, take damage 
+        if (other.gameObject.tag == "Attack")
+        {
+            //take damage from attack & play sound
+            transform.GetComponentInParent<GuardScript>().DoDamage(1);
+            GetComponent<AudioSource>().PlayOneShot(hurtSound);
+
+            //get the current health
+            int myHealth = transform.GetComponentInParent<GuardScript>().GetHealth();
+
+            if (myHealth <= 0)
+            {
+                //out of health, guard died
+                PlayerController playerCont = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
+
+                playerCont.StartFrayFight();
+
+
+                Destroy(parent);
+                Destroy(gameObject);
+            }
+            else if (myHealth <= 10 && !setNextPhase)
+            {
+                //set the next animation
+                GetComponent<Animator>().Play("Base Layer.Half Health anim");
+                setNextPhase = true;
+            }
+            else if (myHealth <= 5 && !setFinalPhase)
+            {
+                //set the final animation
+                GetComponent<Animator>().Play("Base Layer.Low Health anim");
+                setFinalPhase = true;
+            }
+
+        }
+    }
+
+    public void ResetPhases()
+    {
+        setFinalPhase = false;
+        setNextPhase = false;
+        GetComponent<Animator>().Play("Base Layer.Full Health anim");
+    }
+}
